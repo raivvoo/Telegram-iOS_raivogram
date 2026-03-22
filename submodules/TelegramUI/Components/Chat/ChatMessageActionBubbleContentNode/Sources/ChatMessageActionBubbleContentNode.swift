@@ -721,6 +721,28 @@ public class ChatMessageActionBubbleContentNode: ChatMessageBubbleContentNode {
                             
                             animation.animator.updateFrame(layer: strongSelf.labelNode.textNode.layer, frame: labelFrame, completion: nil)
                             strongSelf.backgroundColorNode.backgroundColor = selectDateFillStaticColor(theme: item.presentationData.theme.theme, wallpaper: item.presentationData.theme.wallpaper)
+                            
+                            // Check if this is a deleted message
+                            var isDeleted = false
+                            for media in item.message.media {
+                                if let action = media as? TelegramMediaAction, case let .customText(text, _, _) = action.action {
+                                    if text.lowercased().contains("deleted") || text.contains("удалено") {
+                                        isDeleted = true
+                                        break
+                                    }
+                                }
+                            }
+                            if isDeleted {
+                                strongSelf.backgroundColorNode.alpha = 0.7
+                                if let attributedText = strongSelf.labelNode.attributedText {
+                                    let mutable = NSMutableAttributedString(attributedString: attributedText)
+                                    let primaryTextColor = serviceMessageColorComponents(theme: item.presentationData.theme.theme, wallpaper: item.presentationData.theme.wallpaper).primaryText
+                                    mutable.append(NSAttributedString(string: " 🗑️", font: Font.regular(13.0), textColor: primaryTextColor))
+                                    strongSelf.labelNode.attributedText = mutable
+                                }
+                            } else {
+                                strongSelf.backgroundColorNode.alpha = 1.0
+                            }
 
                             if !labelLayout.spoilers.isEmpty {
                                 let dustColor = serviceMessageColorComponents(theme: item.presentationData.theme.theme, wallpaper: item.presentationData.theme.wallpaper).primaryText
